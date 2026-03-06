@@ -1,11 +1,181 @@
 ---
-import Welcome from '../components/Welcome.astro';
 import Layout from '../layouts/Layout.astro';
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const calls = [
+  { phone: '+34 600 000 001', contact: '+34 912 345 678', duration: '05:22', status: 'Finalizada', type: 'Saliente', date: '2026-03-05 10:30' },
+  { phone: '+34 600 000 045', contact: '+34 932 345 120', duration: '01:45', status: 'En cola', type: 'Entrante', date: '2026-03-05 10:10' },
+  { phone: '+34 600 000 007', contact: 'N/A', duration: '00:12', status: 'Perdida', type: 'Entrante', date: '2026-03-05 09:52' },
+  { phone: '+34 600 000 099', contact: '+34 933 222 100', duration: '02:31', status: 'Finalizada', type: 'Entrante', date: '2026-03-05 09:41' },
+  { phone: '+34 600 000 123', contact: '+34 915 444 777', duration: '08:44', status: 'Finalizada', type: 'Saliente', date: '2026-03-05 09:18' },
+  { phone: '+34 600 000 111', contact: '+34 910 000 444', duration: '00:33', status: 'Perdida', type: 'Entrante', date: '2026-03-05 09:05' }
+];
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="ARGENTO Dashboard">
+  <main class="app-shell">
+    <aside class="panel sidebar">
+      <div>
+        <h1>ARGENTO</h1>
+        <p>Call Center Dashboard</p>
+      </div>
+      <nav>
+        <a class="active" href="#">Dashboard</a>
+        <a href="#kpis">Métricas</a>
+        <a href="#llamadas">Llamadas</a>
+        <a href="#config">Configuración</a>
+      </nav>
+    </aside>
+
+    <section class="content">
+      <header class="panel topbar">
+        <div>
+          <strong>Resumen operativo</strong>
+          <p>Vista consolidada con filtros y gestión de llamadas</p>
+        </div>
+        <button id="refreshBtn">Actualizar</button>
+      </header>
+
+      <section id="kpis" class="kpis">
+        <article class="panel card"><span>Total llamadas</span><strong id="totalCalls">0</strong></article>
+        <article class="panel card"><span>Finalizadas</span><strong id="closedCalls">0</strong></article>
+        <article class="panel card"><span>En cola</span><strong id="queuedCalls">0</strong></article>
+        <article class="panel card"><span>Perdidas</span><strong id="missedCalls">0</strong></article>
+      </section>
+
+      <section id="llamadas" class="panel table-wrap">
+        <div class="table-head">
+          <input id="searchInput" placeholder="Buscar por número o estado..." />
+          <select id="statusFilter">
+            <option value="all">Todos</option>
+            <option value="Finalizada">Finalizada</option>
+            <option value="En cola">En cola</option>
+            <option value="Perdida">Perdida</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr><th>Número</th><th>Contacto</th><th>Duración</th><th>Estado</th><th>Tipo</th><th>Fecha</th></tr>
+            </thead>
+            <tbody id="callsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <small id="rowsMeta"></small>
+          <div>
+            <button id="prevPage">Anterior</button>
+            <button id="nextPage">Siguiente</button>
+          </div>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script define:vars={{ calls }}>
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+    const callsBody = document.getElementById('callsBody');
+    const rowsMeta = document.getElementById('rowsMeta');
+    const prevPage = document.getElementById('prevPage');
+    const nextPage = document.getElementById('nextPage');
+
+    let page = 1;
+    const perPage = 4;
+
+    const renderKpis = (rows) => {
+      document.getElementById('totalCalls').textContent = rows.length;
+      document.getElementById('closedCalls').textContent = rows.filter(r => r.status === 'Finalizada').length;
+      document.getElementById('queuedCalls').textContent = rows.filter(r => r.status === 'En cola').length;
+      document.getElementById('missedCalls').textContent = rows.filter(r => r.status === 'Perdida').length;
+    };
+
+    const filteredRows = () => {
+      const q = searchInput.value.toLowerCase().trim();
+      const status = statusFilter.value;
+      return calls.filter(c => {
+        const byText = `${c.phone} ${c.contact} ${c.status} ${c.type}`.toLowerCase().includes(q);
+        const byStatus = status === 'all' ? true : c.status === status;
+        return byText && byStatus;
+      });
+    };
+
+    const renderTable = () => {
+      const rows = filteredRows();
+      const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
+      if (page > totalPages) page = totalPages;
+
+      const start = (page - 1) * perPage;
+      const pageRows = rows.slice(start, start + perPage);
+
+      callsBody.innerHTML = pageRows.map(row => `
+        <tr>
+          <td>${row.phone}</td>
+          <td>${row.contact}</td>
+          <td>${row.duration}</td>
+          <td><span class="badge">${row.status}</span></td>
+          <td>${row.type}</td>
+          <td>${row.date}</td>
+        </tr>
+      `).join('');
+
+      rowsMeta.textContent = `Página ${page} de ${totalPages} · ${rows.length} resultado(s)`;
+      prevPage.disabled = page === 1;
+      nextPage.disabled = page === totalPages;
+      renderKpis(rows);
+    };
+
+    searchInput.addEventListener('input', () => { page = 1; renderTable(); });
+    statusFilter.addEventListener('change', () => { page = 1; renderTable(); });
+    prevPage.addEventListener('click', () => { page--; renderTable(); });
+    nextPage.addEventListener('click', () => { page++; renderTable(); });
+    document.getElementById('refreshBtn').addEventListener('click', renderTable);
+
+    renderTable();
+  </script>
+
+  <style>
+    .app-shell { display: grid; grid-template-columns: 260px 1fr; gap: 1rem; min-height: 100vh; padding: 1rem; }
+    .sidebar { padding: 1rem; display: grid; align-content: start; gap: 1rem; }
+    .sidebar h1 { margin: 0; font-size: 1.1rem; }
+    .sidebar p { color: var(--muted); margin: 0; font-size: .9rem; }
+    .sidebar nav { display: grid; gap: .4rem; }
+    .sidebar a { color: var(--muted); text-decoration: none; border: 1px solid transparent; border-radius: 10px; padding: .6rem .7rem; }
+    .sidebar a.active, .sidebar a:hover { color: #fff; background: #1b1b1f; border-color: #2e2e31; }
+
+    .content { display: grid; gap: 1rem; }
+    .topbar { padding: 1rem; display: flex; justify-content: space-between; align-items: center; }
+    .topbar p { margin: .25rem 0 0; color: var(--muted); }
+    .topbar button { background: #1e293b; color: #fff; border: 1px solid #374151; border-radius: 10px; padding: .55rem .8rem; cursor: pointer; }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .8rem; }
+    .card { padding: 1rem; display: grid; gap: .4rem; }
+    .card span { color: var(--muted); font-size: .85rem; }
+    .card strong { font-size: 1.5rem; }
+
+    .table-wrap { padding: 1rem; }
+    .table-head { display: flex; gap: .6rem; margin-bottom: .8rem; }
+    input, select, button { background: #0f0f12; color: #f4f4f5; border: 1px solid #2a2a2a; border-radius: 10px; padding: .55rem .7rem; }
+    input { width: 100%; }
+    .table-container { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: left; padding: .7rem; border-bottom: 1px solid #262626; }
+    th { color: #d4d4d8; font-weight: 600; }
+    td { color: #a1a1aa; }
+    .badge { background: #161f1a; color: #86efac; border: 1px solid #2f4f38; border-radius: 999px; padding: .18rem .5rem; font-size: .75rem; }
+    .pagination { margin-top: .8rem; display: flex; justify-content: space-between; align-items: center; }
+    .pagination small { color: var(--muted); }
+
+    @media (max-width: 1024px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 640px) {
+      .kpis { grid-template-columns: 1fr; }
+      .table-head { flex-direction: column; }
+      .topbar { flex-direction: column; align-items: flex-start; gap: .6rem; }
+    }
+  </style>
 </Layout>
