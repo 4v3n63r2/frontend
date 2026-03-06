@@ -6,8 +6,6 @@
   --muted: #27272a;
   --muted-foreground: #a1a1aa;
   --border: #27272a;
-  --primary: #fafafa;
-  --primary-foreground: #18181b;
   --radius: 0.75rem;
 }
 
@@ -17,13 +15,18 @@
 
 body {
   margin: 0;
-  background: var(--background);
+  background: radial-gradient(circle at top right, #141419, #09090b 40%);
   color: var(--foreground);
   font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
-h2 {
-  margin-top: 0;
+h2,
+h3 {
+  margin: 0;
+}
+
+p {
+  color: var(--muted-foreground);
 }
 
 .panel {
@@ -31,4 +34,38 @@ h2 {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.25rem;
+}
+
+.page {
+  display: grid;
+  gap: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  padding: 1rem;
+  background: #121215;
+
+  h3 {
+    font-size: 0.9rem;
+    color: #a1a1aa;
+    margin-bottom: 0.5rem;
+  }
+
+  strong {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }
