@@ -1,0 +1,13 @@
+{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "files.exclude": {
+    "**/.angular": true,
+    "**/dist": true
+  },
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript"
+  }
+}
